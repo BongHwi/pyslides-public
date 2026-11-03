@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 66" width="150" height="66" role="img" aria-label="PySlides wordmark">
+<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="7">
+<path stroke="#46413c" d="M10 58 V8 H30 A15 15 0 0 1 30 38 H10"/>
+<path stroke="#009682" d="M92 14 C88 6 64 6 64 20 C64 34 92 30 92 44 C92 60 66 60 62 50"/>
+</g>
+<g fill="none" stroke-linecap="round" stroke-width="5" stroke="#aaa5a0"><path d="M108 14 H140"/><path d="M108 33 H140"/><path d="M108 52 H132"/></g>
+</svg>

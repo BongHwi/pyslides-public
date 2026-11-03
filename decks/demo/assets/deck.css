@@ -1,0 +1,51 @@
+/* Styles of the PySlides demo deck. Colours come from the engine theme variables. */
+.hl{color:var(--alert);background:#e1001914;padding:0 .2em}
+/* "PySlides Mono" is the monospace face the engine bundles; a div, because the engine forces <pre> to a math face in a vector PDF. */
+.code{font:400 21px/1.5 "PySlides Mono",var(--f-mono);white-space:pre-wrap;margin:0;color:var(--ink-2)}
+.axis-row{display:flex;justify-content:space-between;font-size:18px;color:var(--muted);margin-top:4px}
+
+/* Chart paths (inline SVG, no text elements). */
+.chart path{vector-effect:non-scaling-stroke}
+.chart .grid{fill:none;stroke:var(--line);stroke-width:1}
+.chart .axis{fill:none;stroke:var(--structure);stroke-width:2}
+.chart .curve{fill:none;stroke:var(--teal);stroke-width:4;stroke-linejoin:round}
+.chart .env{fill:none;stroke:var(--s4);stroke-width:2.5;stroke-dasharray:8 6}
+.chart .fit{fill:none;stroke:var(--alert);stroke-width:3.5}
+.chart .pts{fill:var(--teal);fill-opacity:.8;stroke:white;stroke-width:1.5}
+.chart .bars{fill:var(--secondary);fill-opacity:.85}
+.chart-box{display:flex;flex-direction:column;gap:6px}
+.chart-box .readouts{margin-top:6px}
+.chart-box svg{background:var(--surface);border:1px solid var(--line)}
+.checks{display:grid;gap:6px;margin:6px 0 10px}
+.checks label{justify-content:flex-start;gap:12px;align-items:center}
+.checks input{width:24px;height:24px;margin:0;accent-color:var(--teal)}
+
+/* 3D scenes: a box with a static preview that the canvas replaces when WebGL works. */
+.scene{position:relative;width:100%;aspect-ratio:3/2;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+.scene-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.scene-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.scene.is-live .scene-fallback{display:none}
+.scene-note{position:absolute;left:12px;bottom:8px;margin:0;font-size:16px;color:var(--muted)}
+.module--titlegraphic .scene{aspect-ratio:auto;height:100%;background:none;border:0}
+
+/* Custom layout: .layout-triptych is registered through Deck(layouts=("triptych",)). */
+.layout-triptych{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}
+
+/* Layout gallery (HTML, so its labels are real text). */
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:22px 26px}
+.gallery figure{margin:0}
+.thumb{aspect-ratio:16/9;border:2px solid var(--structure);background:white;display:grid;gap:5px;padding:7px}
+.thumb i{display:block;background:var(--secondary)}
+.thumb i.a{background:var(--teal)}
+.gallery figcaption{font-size:20px;margin-top:6px;color:var(--ink-2);text-align:center}
+.t-columns{grid-template-columns:1fr 1fr}
+.t-rows{grid-template-rows:1fr 1fr}
+.t-figure{grid-template:1fr 1fr/.85fr 1.15fr}.t-figure i:nth-child(2){grid-column:2;grid-row:1/span 2}
+.t-left{grid-template-columns:1.4fr 1fr}
+.t-title{grid-template-columns:1fr 1fr}.t-title i:first-child{grid-column:1}
+.t-tri{grid-template-columns:1fr 1fr 1fr}
+
+/* CJK samples. */
+.sample{font-size:30px;line-height:1.5;margin:0}
+.sample small{display:block;font-size:20px;color:var(--muted);margin-top:4px}
+.big{font-size:1.25em}

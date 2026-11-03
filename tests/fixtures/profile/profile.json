@@ -1,0 +1,8 @@
+{
+  "author": "Example Author",
+  "institute": ["Example Institute", "Example City"],
+  "short_institute": "EI",
+  "title_logos": ["logos/example-a.svg", "logos/example-b.svg"],
+  "f_body": "\"Example Face\", Pretendard, \"LINE Seed JP\", sans-serif",
+  "font_body": "\"Example Face\", Pretendard, \"LINE Seed JP\", sans-serif"
+}
