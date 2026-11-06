@@ -122,6 +122,13 @@ th:first-child,td:first-child{text-align:left}
 .stage-controls{position:absolute;right:10px;bottom:54px;z-index:5;display:flex;gap:6px;padding:8px;opacity:0;transition:opacity .2s}
 .stage-controls:hover,.stage-controls:focus-within{opacity:1}
 .stage-controls button{font-size:15px;background:#fffd}
+.stage-controls .presenter-related{display:flex;gap:6px;align-items:center}
+.stage-controls .presenter-related[hidden]{display:none}
+.presenter-laser-option{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fffd;border:1px solid var(--secondary);font:300 15px var(--f-body);white-space:nowrap;cursor:pointer}
+.presenter-laser-option input{margin:0;accent-color:#c51f26}
+.pyslides-laser{width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,#fff 0 18%,#ff2424 40% 100%);box-shadow:0 0 4px 2px #ff2424cc,0 0 12px 4px #ff242466}
+.pyslides-laser[hidden],.is-export .pyslides-laser{display:none!important}
+@media print{.pyslides-laser,.stage-controls{display:none!important}}
 .chooser{position:absolute;z-index:8;inset:6%;background:white;border:1px solid var(--secondary);box-shadow:0 10px 40px #0003;padding:28px;overflow:auto;font-size:20px}
 .chooser ol{columns:3}
 .chooser li{padding:8px;cursor:pointer}

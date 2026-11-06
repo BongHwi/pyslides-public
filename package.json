@@ -6,7 +6,7 @@
   "description": "PySlides: a slide engine for interactive decks written in Python, with a browser runtime, PDF export and E2E tests.",
   "license": "MIT",
   "scripts": {
-    "test": "node tests/scaffold-e2e.mjs && node tests/robustness-e2e.mjs && node tests/clicker-e2e.mjs && node tests/vector-pdf-e2e.mjs && node tests/profile-e2e.mjs",
+    "test": "node tests/scaffold-e2e.mjs && node tests/robustness-e2e.mjs && node tests/clicker-e2e.mjs && node tests/vector-pdf-e2e.mjs && node tests/profile-e2e.mjs && node tests/presenter-e2e.mjs",
     "test:demo": "node decks/demo/tests/navigation-e2e.mjs && node decks/demo/tests/steps-e2e.mjs && node decks/demo/tests/visual-e2e.mjs"
   },
   "devDependencies": {

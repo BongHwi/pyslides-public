@@ -16,7 +16,7 @@ from .ui import ui_strings
 REPO = Path(__file__).resolve().parent.parent
 STATIC = REPO / "static"
 DECKS = REPO / "decks"
-ENGINE_FILES = ("theme.css", "slides.js", "steps.js", "controls.js")
+ENGINE_FILES = ("theme.css", "slides.js", "steps.js", "controls.js", "laser.js")
 ENGINE_DIRS = ("vendor", "fonts")
 PROFILE_ENV = "PYSLIDES_PROFILE"
 PROFILE_CSS = "profile.css"
@@ -135,7 +135,7 @@ def build_site(folder: Path, deck: Deck | None = None, profile: str | Path | Non
 <html lang="{escape(deck.lang)}" style="{escape(css_variables(theme))}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light"><meta name="theme-color" content="#ffffff"><link rel="icon" href="data:,">
 <title>{escape(deck.title)}</title><link rel="stylesheet" href="/fonts/pretendard/pretendard.css"><link rel="stylesheet" href="/fonts/line-seed-jp/line-seed-jp.css"><link rel="stylesheet" href="/fonts/dejavu/dejavu.css"><link rel="stylesheet" href="/vendor/katex/katex.min.css"><link rel="stylesheet" href="/theme.css">{styles}</head>
-<body data-plugins="{plugins}"><main class="viewport" id="presentation" tabindex="0" aria-label="{ui['presentation']}">
+<body data-plugins="{plugins}" data-laser-label="{ui['laser']}" data-related-label="{ui['related']}" data-return-label="{ui['return']}"><main class="viewport" id="presentation" tabindex="0" aria-label="{ui['presentation']}">
 <div class="stage-shell"><div class="stage" id="stage"><nav class="sections miniframes" aria-label="{ui['sections']}">{miniframes(slides)}</nav>
 <div id="slides" aria-live="off">{frames}</div><aside class="chooser" id="chooser" hidden aria-label="{ui['chooser']}"><button class="overlay-close" aria-label="{ui['close_label']}">{ui['close']}</button><ol></ol></aside>
 <div class="stage-controls"><button id="previous" aria-label="{ui['previous_label']}">{ui['previous']}</button><button id="openChooser" aria-label="{ui['contents_label']}">{ui['contents']}</button><button id="fullscreen" aria-label="{ui['fullscreen_label']}">{ui['fullscreen']}</button><button id="next" aria-label="{ui['next_label']}">{ui['next']}</button></div>

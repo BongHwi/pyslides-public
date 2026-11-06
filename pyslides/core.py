@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
+import math
 import re
 from html import escape
 from typing import Iterable, Mapping
@@ -72,6 +73,17 @@ class Action:
 
 
 @dataclass(frozen=True)
+class LaserCue:
+    """A transient laser target on an existing Build step, positioned within its target element."""
+    step: int
+    selector: str
+    x: float = 0.5
+    y: float = 0.5
+    rx: float = 0.1
+    ry: float = 0.1
+
+
+@dataclass(frozen=True)
 class Slide:
     id: str
     section: str
@@ -85,6 +97,10 @@ class Slide:
     steps: tuple[tuple[Action, ...], ...] = ()
     # Id of a range input or <video> on this slide that F17/F16 step forward/back (a pinch-and-turn dial, see AUTHORING.md).
     dial: str = ""
+    # Optional laser positions, keyed by existing 1-based Build step.
+    laser: tuple[LaserCue, ...] = ()
+    # Optional links to related slides (destination id, short label).
+    related: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -257,7 +273,10 @@ class Renderer:
         status = '<p class="calc-status slide-calc-status" role="status" aria-live="polite"></p>' if live else ""
         steps = escape(json.dumps([[{"kind": x.kind, "target": x.target, "value": x.value, "seconds": x.seconds} for x in actions] for actions in slide.steps]))
         dial = f' data-dial="{escape(slide.dial)}"' if slide.dial else ""
-        attrs = f'data-steps="{steps}"{dial} id="{escape(slide.id)}" data-slide-id="{escape(slide.id)}" data-title="{escape(plain(slide.title))}" data-section="{escape(slide.section)}" data-components="{escape(components)}" aria-labelledby="title-{escape(slide.id)}"{" inert hidden" if index else ""}'
+        laser = (f' data-laser="{escape(json.dumps([{"step": cue.step, "selector": cue.selector, "x": cue.x, "y": cue.y, "rx": cue.rx, "ry": cue.ry} for cue in slide.laser]), quote=True)}"'
+                 if slide.laser else "")
+        related = (f' data-related="{escape(json.dumps(slide.related), quote=True)}' + '"' if slide.related else "")
+        attrs = f'data-steps="{steps}"{dial}{laser}{related} id="{escape(slide.id)}" data-slide-id="{escape(slide.id)}" data-title="{escape(plain(slide.title))}" data-section="{escape(slide.section)}" data-components="{escape(components)}" aria-labelledby="title-{escape(slide.id)}"{" inert hidden" if index else ""}'
         notes_label = escape(self.ui["notes"])
         notes = f'<aside class="notes" aria-label="{notes_label}">{escape(slide.notes)}</aside>'
         if slide.layout == "title":
@@ -298,6 +317,7 @@ def text_fields(slide: Slide) -> Iterable[str]:
 def validate_slides(slides: Iterable[Slide], components: Mapping[str, Component] | None = None,
                     layouts: Iterable[str] = ()) -> None:
     """Fail the build on mistakes that would otherwise only show up during the talk."""
+    slides = tuple(slides)
     components = components or {}
     layouts = LAYOUTS | set(layouts)
     renderer = Renderer(components, {})
@@ -314,6 +334,35 @@ def validate_slides(slides: Iterable[Slide], components: Mapping[str, Component]
         if slide.layout not in layouts:
             raise ValueError(f"Unknown layout on {slide.id}: {slide.layout} (one of {', '.join(sorted(LAYOUTS))}; "
                              "a deck style can add more through Deck.layouts)")
+        cue_steps: set[int] = set()
+        for cue in slide.laser:
+            if not isinstance(cue, LaserCue):
+                raise ValueError(f"laser on {slide.id} must contain LaserCue values")
+            if isinstance(cue.step, bool) or not isinstance(cue.step, int) or not 1 <= cue.step <= len(slide.steps):
+                raise ValueError(f"laser cue step on {slide.id} must name an existing Build (1–{len(slide.steps)}): {cue.step}")
+            if cue.step in cue_steps:
+                raise ValueError(f"Duplicate laser cue Build on {slide.id}: {cue.step}")
+            cue_steps.add(cue.step)
+            if not isinstance(cue.selector, str) or not cue.selector.strip():
+                raise ValueError(f"laser cue selector on {slide.id} must be a non-empty CSS selector")
+            for name, value in (("x", cue.x), ("y", cue.y)):
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= 1:
+                    raise ValueError(f"laser cue {name} on {slide.id} must be between 0 and 1")
+            for name, value in (("rx", cue.rx), ("ry", cue.ry)):
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 < value <= 1:
+                    raise ValueError(f"laser cue {name} on {slide.id} must be greater than 0 and at most 1")
+        related_ids: set[str] = set()
+        for related in slide.related:
+            if not isinstance(related, (tuple, list)) or len(related) != 2:
+                raise ValueError(f"related links on {slide.id} must be (slide_id, label) pairs")
+            target, label = related
+            if not isinstance(target, str) or not target.strip() or not isinstance(label, str) or not label.strip():
+                raise ValueError(f"related link on {slide.id} needs a destination id and label")
+            if target == slide.id:
+                raise ValueError(f"Slide {slide.id} cannot link to itself")
+            if target in related_ids:
+                raise ValueError(f"Duplicate related slide on {slide.id}: {target}")
+            related_ids.add(target)
         for field in text_fields(slide):
             if unbalanced_math(field):
                 raise ValueError(f"Unbalanced $ on {slide.id} (write \\$ for a literal dollar): {field}")
@@ -361,3 +410,7 @@ def validate_slides(slides: Iterable[Slide], components: Mapping[str, Component]
                             raise ValueError(f"press() target not found on {slide.id}: {action.target}")
                 else:
                     raise ValueError(f"Unknown step action on {slide.id}: {action.kind}")
+    for slide in slides:
+        for target, _label in slide.related:
+            if target not in seen:
+                raise ValueError(f"Related slide {target!r} from {slide.id} does not exist")

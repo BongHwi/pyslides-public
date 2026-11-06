@@ -12,6 +12,7 @@ UI: dict[str, dict[str, str]] = {
         "close": "닫기", "close_label": "선택 창 닫기",
         "sections": "발표 섹션", "chooser": "슬라이드 선택", "notes": "발표자 노트",
         "presentation": "Interactive slide presentation",
+        "laser": "레이저 애니메이션", "related": "관련 슬라이드", "return": "← 돌아가기",
     },
     "en": {
         "previous": "← Previous", "contents": "Contents", "fullscreen": "Full screen", "next": "Next →",
@@ -20,6 +21,7 @@ UI: dict[str, dict[str, str]] = {
         "close": "Close", "close_label": "Close chooser",
         "sections": "Presentation sections", "chooser": "Slide list", "notes": "Presenter notes",
         "presentation": "Interactive slide presentation",
+        "laser": "Laser animation", "related": "Related slides", "return": "← Return",
     },
     "ja": {
         "previous": "← 前へ", "contents": "目次", "fullscreen": "全画面", "next": "次へ →",
@@ -28,6 +30,7 @@ UI: dict[str, dict[str, str]] = {
         "close": "閉じる", "close_label": "スライド選択を閉じる",
         "sections": "発表セクション", "chooser": "スライド一覧", "notes": "発表者ノート",
         "presentation": "インタラクティブなスライド発表",
+        "laser": "レーザーアニメーション", "related": "関連スライド", "return": "← 戻る",
     },
 }
 

@@ -1,27 +1,58 @@
 import { readSteps, runStep, captureState, restoreState, finishSteps, cancelSteps } from "/steps.js";
+import { createLaser } from "/laser.js";
 // LaTeX that KaTeX cannot parse stays as red source with the error as tooltip; `check` reports it.
 const typeset=(el,displayMode)=>{const source=el.textContent;try{window.katex?.render(source,el,{displayMode,throwOnError:true})}catch(error){el.textContent=source;el.classList.add("katex-error");el.title=error.message}};
 document.querySelectorAll(".equation [data-tex]").forEach(el=>typeset(el,true));document.querySelectorAll("[data-tex-inline]").forEach(el=>typeset(el,false));
 const slides=[...document.querySelectorAll(".slide")], stage=document.querySelector("#stage"), root=document.querySelector("#presentation");
 let index=0, step=0, booted=false;
 const snapshots=new Map(), exportMode=new URLSearchParams(location.search).has("export");
+const hasLaser=slides.some(s=>s.dataset.laser), hasRelated=slides.some(s=>s.dataset.related);
+const laser=hasLaser?createLaser({stage,exportMode}):null;
+let relatedNav=null, returnTarget=null;
 if(exportMode)document.documentElement.classList.add("is-export");
 // Deck plugins: ES modules listed in Deck.scripts. Hooks: init({exportMode,slides}), onShow(slide), isSettled().
 // A plugin that fails to load is reported and skipped; the deck itself keeps working.
 const plugins=(await Promise.allSettled(JSON.parse(document.body.dataset.plugins||"[]").map(src=>import(src)))).flatMap(r=>{if(r.status==="fulfilled")return[r.value.default||r.value];console.error("plugin failed to load:",r.reason?.message||r.reason);return[]});
 function closeTableOverlays(slide){slide?.querySelectorAll("details[open]").forEach(d=>{if(d.querySelector(".table-scroll"))d.open=false;});}
-function show(next,{hash=true,entry="jump"}={}){next=Math.max(0,Math.min(slides.length-1,next));const changed=next!==index||!booted;booted=true;if(next!==index){closeTableOverlays(slides[index]);finishSteps()}index=next;slides.forEach((s,i)=>{const active=i===index;s.hidden=!active;s.inert=!active;s.classList.toggle("is-active",active)});const active=slides[index];if(hash&&location.hash!=="#"+active.id)history.replaceState(null,"","#"+active.id);sectionTabs.forEach(t=>t.setAttribute("aria-current",String(t.textContent===active.dataset.section)));frameDots.forEach(d=>d.setAttribute("aria-current",String(d.dataset.goto===active.dataset.slideId)));sectionBoxes.forEach(box=>{const dots=[...box.querySelectorAll(".mf-dot")],idx=dots.map(d=>+d.dataset.index),k=idx.indexOf(index);box.dataset.state=k>=0?"current":idx[idx.length-1]<index?"done":"todo";box.style.setProperty("--fill",k>=0?(k+1)/idx.length:box.dataset.state==="done"?1:0)});stage.classList.toggle("is-plain",active.dataset.plain==="true");plugins.forEach(p=>{try{p.onShow?.(active)}catch(error){console.error(error)}});if(changed)enterSteps(entry);updateNavState()}
+function show(next,{hash=true,entry="jump"}={}){laser?.stop();next=Math.max(0,Math.min(slides.length-1,next));const changed=next!==index||!booted;booted=true;if(next!==index){closeTableOverlays(slides[index]);finishSteps()}index=next;slides.forEach((s,i)=>{const active=i===index;s.hidden=!active;s.inert=!active;s.classList.toggle("is-active",active)});const active=slides[index];if(hash&&location.hash!=="#"+active.id)history.replaceState(null,"","#"+active.id);sectionTabs.forEach(t=>t.setAttribute("aria-current",String(t.textContent===active.dataset.section)));frameDots.forEach(d=>d.setAttribute("aria-current",String(d.dataset.goto===active.dataset.slideId)));sectionBoxes.forEach(box=>{const dots=[...box.querySelectorAll(".mf-dot")],idx=dots.map(d=>+d.dataset.index),k=idx.indexOf(index);box.dataset.state=k>=0?"current":idx[idx.length-1]<index?"done":"todo";box.style.setProperty("--fill",k>=0?(k+1)/idx.length:box.dataset.state==="done"?1:0)});stage.classList.toggle("is-plain",active.dataset.plain==="true");plugins.forEach(p=>{try{p.onShow?.(active)}catch(error){console.error(error)}});if(changed)enterSteps(entry);updateNavState();updateRelated(active)}
 // Steps: snapshots.get(id)[k] is the slide state before step k, so ← restores it exactly instead of replaying
 // earlier steps. Entry 0 is taken the first time the slide is entered, before any step or manual change, so a slide
 // entered forward or by a jump always starts from its first-visit state; entered backward it shows its final step.
 function snapshot(slide){finishSteps();return{dom:captureState(slide),plugins:plugins.map(p=>{try{return p.saveState?.(slide)}catch(error){console.error(error)}})}}
 function restore(slide,snap){if(!snap)return;restoreState(snap.dom);plugins.forEach((p,i)=>{try{p.restoreState?.(slide,snap.plugins[i])}catch(error){console.error(error)}})}
-function playStep(slide,steps,instant){const id=slide.dataset.slideId;if(!snapshots.has(id))snapshots.set(id,[]);const taken=snapshots.get(id);if(step>0||!taken[0])taken[step]=snapshot(slide);runStep(slide,steps[step],{instant});step+=1}
+function playStep(slide,steps,instant){const id=slide.dataset.slideId;if(!snapshots.has(id))snapshots.set(id,[]);const taken=snapshots.get(id);if(step>0||!taken[0])taken[step]=snapshot(slide);runStep(slide,steps[step],{instant});step+=1;if(!instant){const cue=JSON.parse(slide.dataset.laser||"[]").find(c=>c.step===step);if(cue)laser?.trigger(slide,cue)}}
 function enterSteps(entry){const slide=slides[index],steps=readSteps(slide),id=slide.dataset.slideId;step=0;if(!steps.length)return;let first=snapshots.get(id)?.[0];if(first)restore(slide,first);else first=snapshot(slide);snapshots.set(id,[first]);if(entry==="backward")while(step<steps.length)playStep(slide,steps,true)}
 function updateNavState(){const steps=readSteps(slides[index]);slides[index].querySelectorAll(".stepdots i").forEach((d,i)=>d.classList.toggle("on",i<step));document.querySelector("#previous").disabled=index===0&&step===0;document.querySelector("#next").disabled=index===slides.length-1&&step>=steps.length}
-function advance(direction,{instant=exportMode}={}){const slide=slides[index],steps=readSteps(slide);if(direction>0){if(step<steps.length){playStep(slide,steps,instant);updateNavState()}else if(index<slides.length-1)show(index+1,{entry:"forward"});return}if(step>0){step-=1;restore(slide,snapshots.get(slide.dataset.slideId)[step]);updateNavState()}else if(index>0)show(index-1,{entry:"backward"})}
+function advance(direction,{instant=exportMode}={}){laser?.stop();const slide=slides[index],steps=readSteps(slide);if(direction>0){if(step<steps.length){playStep(slide,steps,instant);updateNavState()}else if(index<slides.length-1)show(index+1,{entry:"forward"});return}if(step>0){step-=1;restore(slide,snapshots.get(slide.dataset.slideId)[step]);updateNavState()}else if(index>0)show(index-1,{entry:"backward"})}
 function goTo(value){const i=typeof value==="number"?value:slides.findIndex(s=>s.dataset.slideId===value||s.id===value);if(i>=0)show(i)}
-window.PySlides={goTo,next:options=>advance(1,options),previous:options=>advance(-1,options),getSnapshot:()=>({slideId:slides[index].dataset.slideId,index,step,stepCount:readSteps(slides[index]).length,count:slides.length,manifest:slides.map(s=>({id:s.dataset.slideId,title:s.dataset.title,section:s.dataset.section,components:s.dataset.components?s.dataset.components.split(","):[]}))}),isSettled:()=>plugins.every(p=>{try{return p.isSettled?p.isSettled():true}catch{return true}})};
+window.PySlides={goTo,next:options=>advance(1,options),previous:options=>advance(-1,options),getSnapshot:()=>({slideId:slides[index].dataset.slideId,index,step,stepCount:readSteps(slides[index]).length,count:slides.length,manifest:slides.map(s=>({id:s.dataset.slideId,title:s.dataset.title,section:s.dataset.section,components:s.dataset.components?s.dataset.components.split(","):[]}))}),isSettled:()=>plugins.every(p=>{try{return p.isSettled?p.isSettled():true}catch{return true}})&&(!laser||laser.isSettled())};
+function updateRelated(slide){
+  if(!relatedNav)return;
+  relatedNav.replaceChildren();
+  const id=slide.dataset.slideId;
+  if(returnTarget&&id===returnTarget.id)returnTarget=null;
+  if(returnTarget){
+    const back=document.createElement("button");back.type="button";back.textContent=document.body.dataset.returnLabel;back.dataset.relatedReturn="";
+    back.addEventListener("click",()=>{const saved=returnTarget;returnTarget=null;goTo(saved.id);snapshots.set(saved.id,saved.history);restore(slides[index],saved.state);step=saved.step;updateNavState();updateRelated(slides[index]);root.focus({preventScroll:true})});
+    relatedNav.append(back);
+  }
+  for(const [target,label] of JSON.parse(slide.dataset.related||"[]")){
+    const button=document.createElement("button");button.type="button";button.textContent=label;button.dataset.relatedTarget=target;
+    button.addEventListener("click",()=>{if(!returnTarget){laser?.stop();const id=slides[index].dataset.slideId;returnTarget={id,step,state:snapshot(slides[index]),history:[...(snapshots.get(id)||[])]}}goTo(target);root.focus({preventScroll:true})});
+    relatedNav.append(button);
+  }
+  relatedNav.hidden=!relatedNav.childElementCount;
+}
+if(!exportMode&&(hasLaser||hasRelated)){
+  const controls=document.querySelector(".stage-controls");
+  if(hasRelated){relatedNav=document.createElement("nav");relatedNav.className="presenter-related";relatedNav.setAttribute("aria-label",document.body.dataset.relatedLabel);relatedNav.hidden=true;controls.prepend(relatedNav)}
+  if(hasLaser){
+    const label=document.createElement("label"),input=document.createElement("input");label.className="presenter-laser-option";input.type="checkbox";
+    let enabled=true;try{enabled=localStorage.getItem("pyslides.laser.enabled")!=="false"}catch{}
+    input.checked=enabled;laser.setEnabled(enabled);input.addEventListener("change",()=>{laser.setEnabled(input.checked);try{localStorage.setItem("pyslides.laser.enabled",String(input.checked))}catch{}});
+    label.append(input,document.body.dataset.laserLabel);controls.insertBefore(label,document.querySelector("#previous"));
+  }
+}
 function fitStage(){const shell=document.querySelector(".stage-shell"),scale=Math.min(shell.clientWidth/1600,shell.clientHeight/900);stage.style.transform="scale("+scale+")"}
 // Presentation clickers (and Kinesis on a neural band) send PageDown/PageUp. These always step, wherever focus is,
 // so a slider or button the presenter clicked cannot swallow them. Other keys stay with a focused control.

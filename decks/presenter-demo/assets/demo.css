@@ -1,0 +1,7 @@
+.demo-figure{position:relative;width:560px;height:310px;margin:25px auto;background:linear-gradient(transparent 95%,#ddd 95%);border-left:2px solid #555;border-bottom:2px solid #555}
+.demo-figure .axis{position:absolute;inset:30px 32px 30px 30px;background:linear-gradient(135deg,transparent 55%,#ddd 55% 56%,transparent 56%)}
+.demo-figure .points{position:absolute;left:125px;top:76px;font-size:30px;letter-spacing:7px;color:#167c80;font-style:normal}
+.demo-figure .fit{position:absolute;left:118px;top:145px;width:280px;border-top:3px solid #bf4e3a;transform:rotate(-19deg)}
+.demo-step{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.demo-figure:not(:has(#result-points:checked)) .points,.demo-figure:not(:has(#result-fit:checked)) .fit{visibility:hidden}
+.method-list{font-size:30px;line-height:1.8}

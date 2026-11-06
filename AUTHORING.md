@@ -190,6 +190,63 @@ Slide(..., steps=(
 - Other CSS selectors are first checked in the browser. A wrong selector skips only that step and logs an error to the console, and `check` reports it as an error.
 - The PDF has one page per slide and per step.
 
+## Laser cues and related slides
+
+Slides can opt in to a red laser cue on an existing Build and links to related
+slides (for example, an appendix or backup). These options do not add Build
+steps. Decks without `laser` or `related` keep their ordinary presentation
+controls.
+
+```python
+from pyslides import Component, LaserCue, Slide, click, component, step
+
+PLOT = Component(
+    '<input id="show-points" type="checkbox">'
+    '<input id="show-fit" type="checkbox">'
+    '<span id="data-points">●　●　●　●</span>', frame="block",
+)
+
+Slide(
+    "result", "Results", "The measured points follow the trend", "FIG 1",
+    (component("plot", "Multiplicity trend", "The measured ratios rise with multiplicity."),),
+    # Register PLOT in Deck.components under "plot".
+    steps=(
+        step(click("#show-points")),
+        step(click("#show-fit")),
+    ),
+    laser=(LaserCue(
+        step=1, selector="#data-points", x=0.72, y=0.48, rx=0.15, ry=0.12,
+    ),),
+    related=(("method", "Analysis method"),),
+)
+```
+
+`LaserCue(step, selector, x=0.5, y=0.5, rx=0.1, ry=0.1)` points at an element
+on its own slide. `step` is a one-based index into that slide's existing
+`steps`; the cue runs when that Build is revealed. `selector` is a CSS selector
+scoped to the slide. The `x` and `y` coordinates, and the `rx` and `ry` orbit
+radii, are fractions of the visible target. At the defaults, the laser makes a
+small loop around its center. Add a cue only when the Build changes something
+the audience should notice.
+
+Set `related` to a tuple of `(slide_id, label)` pairs. Each link opens that
+slide from the lower-right controls. The destination can provide its own
+`related` links. A **Return** control takes the presenter back to the slide and
+Build they came from, including after navigating through other slides. Returning
+to the calling slide by another route also clears the saved return. Directly
+opening a slide by its URL does not create a guessed return destination.
+
+The laser checkbox appears in the lower-right controls when the deck declares
+at least one cue. Its choice is remembered in that browser. Turning it off
+cancels a cue in progress; turning it back on affects later Builds. The motion
+respects the operating system's reduced-motion setting. Laser cues and
+presenter-only controls are hidden from check captures, print and both PDF
+exports.
+
+See [`decks/presenter-demo`](decks/presenter-demo) for a runnable example with
+a laser cue, an intermediate-Build backup link, and a return to the calling
+Build.
+
 ### Dial (grab and turn)
 
 `Slide(..., dial="id")` makes one range input or one `<video>` of the slide the dial target. A working example is in `decks/demo`. The Kinesis "slide scrub" dial sends F17 (forward) or F16 (back) for each notch the wrist turns. If you use these two keys as shortcuts or in a key-remapping tool (Karabiner and the like), the dial will not work.
